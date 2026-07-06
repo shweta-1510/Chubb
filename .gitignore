@@ -1,0 +1,93 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Reports
+# reports/
+# *.html
+# *.csv
+# *.xlsx
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Docker
+*.tar
+
+# Backup files
+*.bak
+*.backup
+*.sql
+
+# Credentials and Keys (Security)
+credentials/
+*.ppk
+*.pem
+*.key
+*.pub
+
+# Bulk Import Files (May contain sensitive data)
+**/server_import*.csv
+**/server_import*.xlsx
+**/server_import*.yaml
+**/server_import*.yml
+server_import*
+
+*.md

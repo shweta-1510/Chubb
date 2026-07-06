@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "health-monitor"
+version = "1.0.0"
+description = "Environment Health Check Monitor"
+requires-python = ">=3.11"
+dependencies = [
+    "streamlit",
+    "pandas",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "python-dotenv",
+    "paramiko",
+    "requests",
+    "openpyxl",
+    "jinja2",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]

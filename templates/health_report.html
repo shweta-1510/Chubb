@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .metric-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .metric-card .label {
+            color: #6c757d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metric-card.total .value { color: #17a2b8; }
+        .metric-card.healthy .value { color: #28a745; }
+        .metric-card.warning .value { color: #ffc107; }
+        .metric-card.critical .value { color: #dc3545; }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .server-section {
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .server-header {
+            padding: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .server-header.Healthy { background: #d4edda; color: #155724; }
+        .server-header.Warning { background: #fff3cd; color: #856404; }
+        .server-header.Critical { background: #f8d7da; color: #721c24; }
+        .server-header.Failed { background: #e2e3e5; color: #383d41; }
+        .server-header.Unknown { background: #d1ecf1; color: #0c5460; }
+        
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status-badge.Healthy { background: #28a745; color: white; }
+        .status-badge.Warning { background: #ffc107; color: #333; }
+        .status-badge.Critical { background: #dc3545; color: white; }
+        .status-badge.Failed { background: #6c757d; color: white; }
+        .status-badge.Unknown { background: #17a2b8; color: white; }
+        
+        .server-body {
+            padding: 20px;
+            background: white;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .info-item .label {
+            font-weight: bold;
+            color: #6c757d;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .info-item .value {
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-box {
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        
+        .metric-box.Healthy { border-color: #28a745; background: #d4edda; }
+        .metric-box.Warning { border-color: #ffc107; background: #fff3cd; }
+        .metric-box.Critical { border-color: #dc3545; background: #f8d7da; }
+        
+        .metric-box .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .metric-box .usage {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table th {
+            background: #495057;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .section-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏥 {{ title }}</h1>
+            <div class="subtitle">Generated on {{ generated_at }}</div>
+        </div>
+        
+        <!-- Summary Section -->
+        <div class="summary">
+            <div class="metric-card total">
+                <div class="label">Total Servers</div>
+                <div class="value">{{ total_servers }}</div>
+            </div>
+            <div class="metric-card healthy">
+                <div class="label">Healthy</div>
+                <div class="value">{{ healthy_count }}</div>
+            </div>
+            <div class="metric-card warning">
+                <div class="label">Warning</div>
+                <div class="value">{{ warning_count }}</div>
+            </div>
+            <div class="metric-card critical">
+                <div class="label">Critical</div>
+                <div class="value">{{ critical_count }}</div>
+            </div>
+        </div>
+        
+        <!-- Server Details -->
+        <div class="content">
+            {% for result in results %}
+            <div class="server-section">
+                <div class="server-header {{ result.overall_status }}">
+                    <span>{{ result.server_name }} ({{ result.ip_address }})</span>
+                    <span class="status-badge {{ result.overall_status }}">{{ result.overall_status }}</span>
+                </div>
+                
+                <div class="server-body">
+                    <!-- Server Information -->
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label">Hostname</div>
+                            <div class="value">{{ result.hostname or 'N/A' }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">OS Type</div>
+                            <div class="value">{{ result.os_type }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Environment</div>
+                            <div class="value">{{ result.environment or 'N/A' }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Check Duration</div>
+                            <div class="value">{{ "%.2f"|format(result.duration_seconds or 0) }} seconds</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resource Metrics -->
+                    <div class="section-title">📊 Resource Utilization</div>
+                    <div class="metrics-grid">
+                        {% if result.cpu_metric %}
+                        <div class="metric-box {{ result.cpu_metric.status }}">
+                            <div class="name">CPU Usage</div>
+                            <div class="usage">{{ "%.2f"|format(result.cpu_metric.usage) }}%</div>
+                            <div>Status: {{ result.cpu_metric.status }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if result.memory_metric %}
+                        <div class="metric-box {{ result.memory_metric.status }}">
+                            <div class="name">Memory Usage</div>
+                            <div class="usage">{{ "%.2f"|format(result.memory_metric.usage) }}%</div>
+                            <div>Status: {{ result.memory_metric.status }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if result.disk_metric %}
+                        <div class="metric-box {{ result.disk_metric.status }}">
+                            <div class="name">Disk Usage</div>
+                            <div class="usage">{{ "%.2f"|format(result.disk_metric.usage) }}%</div>
+                            <div>Status: {{ result.disk_metric.status }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Services -->
+                    {% if result.service_statuses %}
+                    <div class="section-title">🔧 Service Status</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Service Name</th>
+                                <th>Status</th>
+                                <th>Running</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in result.service_statuses %}
+                            <tr>
+                                <td>{{ service.service_name }}</td>
+                                <td><span class="status-badge {{ service.status }}">{{ service.status }}</span></td>
+                                <td>{{ '✅ Yes' if service.is_running else '❌ No' }}</td>
+                                <td>{{ service.message or 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                    
+                    <!-- Database -->
+                    {% if result.database_status %}
+                    <div class="section-title">💾 Database Connectivity</div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label">Database Type</div>
+                            <div class="value">{{ result.database_status.database_type }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Host:Port</div>
+                            <div class="value">{{ result.database_status.host }}:{{ result.database_status.port }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Connected</div>
+                            <div class="value">{{ '✅ Yes' if result.database_status.is_connected else '❌ No' }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Response Time</div>
+                            <div class="value">{{ "%.2f"|format(result.database_status.response_time_ms or 0) }} ms</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Errors -->
+                    {% if result.error_message %}
+                    <div class="section-title">⚠️ Errors</div>
+                    <div class="metric-box Critical">
+                        {{ result.error_message }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            Environment Health Check Monitor | Generated by Streamlit Application
+        </div>
+    </div>
+</body>
+</html>
