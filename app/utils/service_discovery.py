@@ -4,12 +4,13 @@ Service Discovery utility for discovering available services on servers.
 import paramiko
 import winrm
 import socket
-from typing import List, Dict, Optional, Tuple
 import re
+from typing import List, Dict, Optional, Tuple
 from pathlib import Path
 
 from app.utils.logger import get_logger
 from app.models.server import ServerModel
+from app.utils.ssh_auth import build_ssh_connect_kwargs
 
 logger = get_logger(__name__)
 
@@ -108,53 +109,25 @@ class ServiceDiscovery:
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             
             # Determine authentication method
-            connect_kwargs = {
-                'hostname': server.ip_address,
-                'username': server.username,
-                'timeout': self.timeout,
-                'port': 22,
-                'banner_timeout': self.banner_timeout,
-                'auth_timeout': self.timeout,
-                'look_for_keys': False,  # Don't search for SSH keys automatically
-                'allow_agent': False     # Don't use SSH agent
-            }
-            
-            # Check if credential_reference is a file path (PPK/PEM/KEY)
-            if server.credential_reference:
-                credential_path = Path(server.credential_reference)
-                if credential_path.exists() and credential_path.is_file():
-                    # Use key file
-                    logger.info(f"Using key file authentication for {server.server_name}: {credential_path.name}")
-                    
-                    # Handle different key formats
-                    key_obj = None
-                    try:
-                        # Try loading as OpenSSH/PEM format first
-                        from paramiko import RSAKey, Ed25519Key, ECDSAKey, DSSKey
-                        
-                        # Try different key types
-                        for key_class in [RSAKey, Ed25519Key, ECDSAKey, DSSKey]:
-                            try:
-                                key_obj = key_class.from_private_key_file(str(credential_path))
-                                logger.info(f"Loaded {key_class.__name__} key for {server.server_name}")
-                                break
-                            except Exception:
-                                continue
-                        
-                        if key_obj:
-                            connect_kwargs['pkey'] = key_obj
-                        else:
-                            # If all key types fail, try as filename (paramiko will try to load it)
-                            connect_kwargs['key_filename'] = str(credential_path)
-                            logger.info(f"Using key_filename parameter for {server.server_name}")
-                    
-                    except Exception as e:
-                        logger.warning(f"Failed to load key file, trying as password: {e}")
-                        connect_kwargs['password'] = server.credential_reference
-                else:
-                    # Use as password
+            try:
+                connect_kwargs = build_ssh_connect_kwargs(
+                    hostname=server.ip_address,
+                    username=server.username,
+                    credential_reference=server.credential_reference,
+                    port=22,
+                    timeout=self.timeout,
+                    banner_timeout=self.banner_timeout,
+                    auth_timeout=self.timeout,
+                )
+                if connect_kwargs.get('pkey') is not None:
+                    logger.info(
+                        f"Using key file authentication for {server.server_name}: {server.credential_reference}"
+                    )
+                elif server.credential_reference:
                     logger.info(f"Using password authentication for {server.server_name}")
-                    connect_kwargs['password'] = server.credential_reference
+            except ValueError as e:
+                logger.error(f"Failed to load SSH key for {server.server_name}: {e}")
+                return False, [], f"SSH key error: {e}"
             
             # Step 3: Connect to server
             logger.info(f"Establishing SSH connection to {server.server_name}")
@@ -402,25 +375,26 @@ class ServiceDiscovery:
     
     def _check_linux_service_status(self, server: ServerModel, service_name: str) -> Tuple[bool, str, str]:
         """Check service status on Linux using systemctl is-active."""
+        # Validate service name to prevent command injection
+        if not re.match(r'^[a-zA-Z0-9_\-@.]+$', service_name):
+            return False, "unknown", f"Invalid service name: {service_name}"
+        
         ssh_client = None
         
         try:
             ssh_client = paramiko.SSHClient()
             ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             
-            connect_kwargs = {
-                'hostname': server.ip_address,
-                'username': server.username,
-                'timeout': self.timeout,
-                'port': 22
-            }
-            
-            if server.credential_reference:
-                credential_path = Path(server.credential_reference)
-                if credential_path.exists() and credential_path.is_file():
-                    connect_kwargs['key_filename'] = str(credential_path)
-                else:
-                    connect_kwargs['password'] = server.credential_reference
+            try:
+                connect_kwargs = build_ssh_connect_kwargs(
+                    hostname=server.ip_address,
+                    username=server.username,
+                    credential_reference=server.credential_reference,
+                    port=22,
+                    timeout=self.timeout,
+                )
+            except ValueError as e:
+                return False, "unknown", f"SSH key error: {e}"
             
             ssh_client.connect(**connect_kwargs)
             

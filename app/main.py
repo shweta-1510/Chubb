@@ -7,9 +7,15 @@ from datetime import datetime
 from typing import List
 import json
 import os
+import sys
 from pathlib import Path
 
-from app.database.db import init_db, get_db_context
+CURRENT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = CURRENT_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from app.database.db import init_db, get_db_context, get_db_read_context
 from app.models.server import ServerModel
 from app.models.monitored_service import MonitoredServiceModel
 from app.services.health_check_service import HealthCheckService
@@ -98,12 +104,16 @@ def show_server_registration():
     
     # Save uploaded file to session state
     if uploaded_ppk:
-        # Save the uploaded file
-        ppk_filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uploaded_ppk.name}"
+        # Use hash of file content to avoid duplicates
+        import hashlib
+        file_bytes = uploaded_ppk.getbuffer()
+        file_hash = hashlib.md5(file_bytes).hexdigest()[:8]
+        ppk_filename = f"{file_hash}_{uploaded_ppk.name}"
         ppk_path = CREDENTIALS_DIR / ppk_filename
         
-        with open(ppk_path, "wb") as f:
-            f.write(uploaded_ppk.getbuffer())
+        if not ppk_path.exists():
+            with open(ppk_path, "wb") as f:
+                f.write(file_bytes)
         
         st.session_state.credential_file_path = str(ppk_path)
         st.success(f"✅ File uploaded: {ppk_filename}")
@@ -579,7 +589,7 @@ def show_health_check_execution():
     st.header("🔍 Health Check Execution")
     
     try:
-        with get_db_context() as db:
+        with get_db_read_context() as db:
             # Fetch active servers
             servers = db.query(ServerModel).filter(ServerModel.is_active == True).all()
             
@@ -773,7 +783,7 @@ def show_servers_list():
     st.header("📋 Registered Servers")
     
     try:
-        with get_db_context() as db:
+        with get_db_read_context() as db:
             servers = db.query(ServerModel).all()
             
             if not servers:
@@ -791,7 +801,7 @@ def show_servers_list():
                     "Environment": server.environment or "N/A",
                     "Connection": server.connection_type,
                     "Active": "✅" if server.is_active else "❌",
-                    "Services": len(server.services_to_monitor) if server.services_to_monitor else 0,
+                    "Services": len(server.monitored_services) if server.monitored_services else 0,
                     "Created": server.created_at.strftime('%Y-%m-%d') if server.created_at else "N/A"
                 })
             

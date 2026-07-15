@@ -8,7 +8,9 @@ from paramiko import SSHClient, AutoAddPolicy
 
 from app.models.health_check_result import ServiceStatus, HealthStatus
 from app.utils.logger import get_logger
+from app.utils.retry import retry
 from app.config import config
+from app.utils.ssh_auth import build_ssh_connect_kwargs
 
 logger = get_logger(__name__)
 
@@ -35,29 +37,26 @@ class LinuxCollector:
         self.port = port
         self.client: Optional[SSHClient] = None
     
+    @retry(max_attempts=3, delay=2.0, exceptions=(Exception,))
     def connect(self) -> bool:
         """
-        Establish SSH connection.
-        
+        Establish SSH connection with retry on transient failures.
+
         Returns:
             True if connection successful, False otherwise
         """
         try:
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(AutoAddPolicy())
-            
-            connect_kwargs = {
-                "hostname": self.hostname,
-                "port": self.port,
-                "username": self.username,
-                "timeout": config.ssh.timeout,
-            }
-            
-            if self.password:
-                connect_kwargs["password"] = self.password
-            
-            if self.key_filename:
-                connect_kwargs["key_filename"] = self.key_filename
+
+            credential_reference = self.key_filename or self.password
+            connect_kwargs = build_ssh_connect_kwargs(
+                hostname=self.hostname,
+                username=self.username,
+                credential_reference=credential_reference,
+                port=self.port,
+                timeout=config.ssh.timeout,
+            )
             
             self.client.connect(**connect_kwargs)
             logger.info(f"Successfully connected to {self.hostname}")
@@ -173,6 +172,15 @@ class LinuxCollector:
             ServiceStatus object
         """
         try:
+            # Validate service name to prevent command injection
+            if not re.match(r'^[a-zA-Z0-9_\-@.]+$', service_name):
+                return ServiceStatus(
+                    service_name=service_name,
+                    status=HealthStatus.FAILED,
+                    is_running=False,
+                    message="Invalid service name"
+                )
+            
             # Check if service is active using systemctl
             command = f"systemctl is-active {service_name}"
             stdout, stderr, exit_code = self.execute_command(command)

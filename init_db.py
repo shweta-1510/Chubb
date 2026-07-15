@@ -10,6 +10,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from app.database.db import init_db, engine
 from app.models.server import ServerModel
+from app.models.monitored_service import MonitoredServiceModel
+from app.models.health_check_history import HealthCheckHistoryModel
 from app.utils.logger import get_logger
 from sqlalchemy import inspect
 

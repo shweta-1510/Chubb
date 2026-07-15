@@ -11,18 +11,21 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# Resolve template directory relative to project root, not CWD
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 class HTMLReportGenerator:
     """Generates HTML health check reports."""
-    
-    def __init__(self, template_dir: str = "templates"):
+
+    def __init__(self, template_dir: str = None):
         """
         Initialize HTML report generator.
-        
+
         Args:
-            template_dir: Directory containing Jinja2 templates
+            template_dir: Directory containing Jinja2 templates (defaults to project root/templates)
         """
-        self.template_dir = Path(template_dir)
+        self.template_dir = Path(template_dir) if template_dir else _PROJECT_ROOT / "templates"
         self.env = Environment(
             loader=FileSystemLoader(self.template_dir),
             autoescape=select_autoescape(['html', 'xml'])

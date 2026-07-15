@@ -5,13 +5,21 @@ import psycopg2
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import sys
+import os
+from dotenv import load_dotenv
 
-# Database connection parameters
-DB_HOST = "localhost"
-DB_PORT = "5432"
-DB_USER = "postgres"
-DB_PASSWORD = "Shweta@11"
-DB_NAME = "health_monitor"
+load_dotenv()
+
+# Database connection parameters from environment
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_USER = os.getenv("DB_USERNAME", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_NAME = os.getenv("DB_NAME", "health_monitor")
+
+if not DB_PASSWORD:
+    print("❌ DB_PASSWORD is not set in .env file")
+    sys.exit(1)
 
 def create_database():
     """Create the health_monitor database if it doesn't exist."""

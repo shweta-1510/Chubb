@@ -55,15 +55,8 @@ def get_db() -> Generator[Session, None, None]:
 @contextmanager
 def get_db_context() -> Generator[Session, None, None]:
     """
-    Context manager for database session.
-    
-    Yields:
-        Session: SQLAlchemy database session
-        
-    Example:
-        with get_db_context() as db:
-            # perform database operations
-            pass
+    Context manager for database session (write operations).
+    Commits on success, rolls back on error.
     """
     db = SessionLocal()
     try:
@@ -73,5 +66,18 @@ def get_db_context() -> Generator[Session, None, None]:
         db.rollback()
         logger.error(f"Database error: {e}")
         raise
+    finally:
+        db.close()
+
+
+@contextmanager
+def get_db_read_context() -> Generator[Session, None, None]:
+    """
+    Context manager for read-only database session.
+    Never commits — avoids unnecessary write overhead.
+    """
+    db = SessionLocal()
+    try:
+        yield db
     finally:
         db.close()

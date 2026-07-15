@@ -17,7 +17,7 @@ class DatabaseConfig(BaseModel):
     host: str = Field(default_factory=lambda: os.getenv("DB_HOST", "localhost"))
     port: int = Field(default_factory=lambda: int(os.getenv("DB_PORT", "5432")))
     username: str = Field(default_factory=lambda: os.getenv("DB_USERNAME", "postgres"))
-    password: str = Field(default_factory=lambda: os.getenv("DB_PASSWORD", "postgres"))
+    password: str = Field(default_factory=lambda: os.getenv("DB_PASSWORD", ""))
     database: str = Field(default_factory=lambda: os.getenv("DB_NAME", "health_monitor"))
     
     @property
@@ -57,6 +57,7 @@ class ApplicationConfig(BaseModel):
     version: str = "1.0.0"
     debug: bool = Field(default_factory=lambda: os.getenv("DEBUG", "False").lower() == "true")
     log_level: str = Field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO"))
+    max_workers: int = Field(default_factory=lambda: int(os.getenv("MAX_WORKERS", "5")))
     
     # Component configurations
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)

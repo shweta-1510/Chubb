@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.health_check_result import DatabaseStatus, HealthStatus
 from app.models.database_config import DatabaseConfig
+from app.utils.retry import retry
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,6 +27,7 @@ class DatabaseCollector:
         self.db_config = db_config
         self.engine = None
     
+    @retry(max_attempts=3, delay=1.0, exceptions=(SQLAlchemyError,))
     def check_connectivity(self) -> DatabaseStatus:
         """
         Check database connectivity and measure response time.
